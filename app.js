@@ -58,7 +58,7 @@ server.del('/api/:zone', function (req, res){
 	data.ttl = (data.ttl) ? data.ttl : config.ttl;
 	data.type = (data.type) ? data.type : config.type;
 	data.zone = req.params.zone;
-	bind.update(data, function (err, msg){
+	bind.delete(data, function (err, msg){
 		var resp = {status:'fail'} ;
 		if(err){
 			resp.message=msg;
@@ -96,8 +96,6 @@ var bind = {
 			return;
 		}
 		content+="send" + "\n";
-
-		console.log(content);
 		fs.writeFile(file, content, function (err, stats){
 			if(err){
 				callback(err);
@@ -125,23 +123,19 @@ var bind = {
 		});
 	},
 	nsupdate : function (file, callback){
-		var auth = "", child;
+		var auth = "";
 		if (config.key){
 			auth = "-y "+config.rndc_key+":"+config.rndc_secret;
 		}
 		var command = "nsupdate "+auth+" -v "+file;
-		
-		// 
-
-		child = exec(command,
-			  function (error, stdout, stderr) {
-			    if (error !== null) {
-			      callback(error, stderr + stdout);
-			    }else{
-			      callback(null, command);
-			    }
-			});
-		// mock
+		exec(command,
+		  function (error, stdout, stderr) {
+		    if (error !== null) {
+		      callback(error, stderr + stdout);
+		    }else{
+		      callback(null, command);
+		    }
+		});
 		
 	}
 }
