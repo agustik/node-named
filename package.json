@@ -1,0 +1,14 @@
+{
+  "name": "node-named",
+  "version": "0.0.1",
+  "description": "BIND api in nodejs",
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agustik/node-named"
+  },
+  "dependencies": {
+    "restify": "^3.0.3",
+    "MD5": "1.2.2"
+  }
+}

@@ -1,0 +1,9 @@
+{
+	"tokens" : ["the-token..."],
+	"server" : "127.0.0.1",
+	"key" : false,
+	"rndc_key": "rndc-key",
+  	"rndc_secret": "",
+  	"ttl": 300,
+  	"type": "A"
+}
