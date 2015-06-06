@@ -130,7 +130,7 @@ var bind = {
 		var command = "nsupdate "+auth+" -v "+file;
 		exec(command,
 		  function (error, stdout, stderr) {
-		    if (error !== null) {
+		    if (error) {
 		      callback(error, stderr + stdout);
 		    }else{
 		      callback(null, command);
