@@ -16,12 +16,26 @@ server.use(restify.bodyParser());
  server.use(restify.queryParser({ mapParams: false }));
 
 server.get('/api/:zone', function (req, res){
+
+	var token = req.headers['x-token'];
+
 	var data = req.query;
 	data.zone = req.params.zone;
 	var resp = {
 		status:'fail',
 		message : 'zone needed /api/:zone'
 	};
+
+
+	if(!Authenticate(token)){
+		if(token == undefined){
+			resp.message="No token";
+		}else{
+			resp.message="Token not valid";
+		}
+		res.send(resp);
+		return;
+	}
 	data.type = (data.type) ? data.type : config.type;
 	if(!req.params.zone){
 		res.send(resp);
@@ -61,11 +75,25 @@ server.get('/api/:zone', function (req, res){
 
 server.post('/api/:zone', function (req, res){
 	var data = JSON.parse(req.body);
+	var token = req.headers['x-token'];
+	var resp = {status:'fail'} ;
+
+	if(!Authenticate(token)){
+		if(token == undefined){
+			resp.message="No token";
+		}else{
+			resp.message="Token not valid";
+		}
+		res.send(resp);
+		return;
+	}
+
+	
 	data.ttl = (data.ttl) ? data.ttl : config.ttl;
 	data.type = (data.type) ? data.type : config.type;
 	data.zone = req.params.zone;
 	bind.update(data, function (err, msg){
-		var resp = {status:'fail'} ;
+		
 		if(err){
 			resp.message=msg;
 		}else{
@@ -78,11 +106,26 @@ server.post('/api/:zone', function (req, res){
 });
 server.del('/api/:zone', function (req, res){
 	var data = JSON.parse(req.body);
+
+	var token = req.headers['x-token'];
+	var resp = {status:'fail'} ;
+
+	if(!Authenticate(token)){
+		if(token == undefined){
+			resp.message="No token";
+		}else{
+			resp.message="Token not valid";
+		}
+		res.send(resp);
+		return;
+	}
+
+
 	data.ttl = (data.ttl) ? data.ttl : config.ttl;
 	data.type = (data.type) ? data.type : config.type;
 	data.zone = req.params.zone;
 	bind.delete(data, function (err, msg){
-		var resp = {status:'fail'} ;
+		
 		if(err){
 			resp.message=msg;
 		}else{
@@ -93,7 +136,13 @@ server.del('/api/:zone', function (req, res){
 	});
 });
 
-
+function Authenticate(token){
+	if(config.tokens.indexOf(token) !== -1 ){
+		return true;
+	}else{
+		return false;
+	}
+}
 
 server.listen(8081, function() {
   console.log('%s listening at %s', server.name, server.url);
