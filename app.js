@@ -159,7 +159,11 @@ var bind = {
 //		content+="debug yes" + "\n";
 		content+="zone "+ obj.zone +"." + "\n";
 		if(type == 'update'){
-			content+="update add "+obj.hostname +" "+ obj.ttl +" "+obj.type+" "+obj.ip + "\n";
+			if(obj.type.toLowerCase() == "cname" ){
+				content+="prereq nxrrset "+obj.hostname+" A";
+				content+="prereq nxrrset "+obj.hostname+" CNAME";
+			}
+			content+="update add "+obj.hostname +" "+ obj.ttl +" "+obj.type+" "+obj.value + "\n";
 			
 		}else if(type == 'delete'){
 			content+="update delete "+obj.hostname +" "+obj.type+"\n";
