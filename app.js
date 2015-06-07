@@ -78,6 +78,12 @@ server.post('/api/:zone', function (req, res){
 	var token = req.headers['x-token'];
 	var resp = {status:'fail'} ;
 
+	if(!data.value || data.hostname){
+		resp.message="value or hostname missing";
+		res.send(resp);
+		return;
+	}
+
 	if(!Authenticate(token)){
 		if(token == undefined){
 			resp.message="No token";
