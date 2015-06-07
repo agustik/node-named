@@ -228,6 +228,10 @@ var dig = {
 
 		      var x = _root._tools._cleandig(stdout, obj.hostname, obj.type);
 
+		      if(x.length < 1){
+		      	x = false;
+		      }
+
 		      if(x){
 		      	callback(null, x);
 		      }else{
