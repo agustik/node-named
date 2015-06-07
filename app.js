@@ -13,26 +13,50 @@ var separator = (isWin) ? '\\' : '/';
 var fs = require('fs');
 server.use(restify.bodyParser());
 
-server.get('/api/:zone', function (req, res){
-	console.log(req.params.zone);
+ server.use(restify.queryParser({ mapParams: false }));
 
+server.get('/api/:zone', function (req, res){
+	var data = req.query;
+	data.zone = req.params.zone;
 	var resp = {
 		status:'fail',
 		message : 'zone needed /api/:zone'
 	};
-	if(req.params.zone){
-		resp.status='success';
-		delete resp.message;
+	data.type = (data.type) ? data.type : config.type;
+	if(!req.params.zone){
+		res.send(resp);
+		return;
 	}
-	res.send(resp);
-});
-
-server.get('/api/:zone', function (req, res){
-		
-	var data = req.body;
-	data.zone = req.params.body;
-	bind.update(data);
-	res.send({status:'success'});
+	if(req.params.zone == 'dig'){
+		console.log(data);
+		resp.status='fail';
+		delete resp.message;
+		dig.query(data, function (err, response){
+			console.log('err:',err, response);
+			if(!err){
+				resp.status='success';
+				resp.data=response;
+			}else{
+				resp.message=response;
+			}
+			res.send(resp);
+		});
+	}else{
+		resp.status='fail';
+		delete resp.message;
+		dig.hostname=data.zone;
+		dig.query(data, function (err, response){
+			console.log('err:',err, response);
+			if(!err){
+				resp.status='success';
+				resp.data=response;
+			}else{
+				resp.message=response;
+			}
+			res.send(resp);
+		});
+	}
+	
 });
 
 server.post('/api/:zone', function (req, res){
@@ -46,10 +70,9 @@ server.post('/api/:zone', function (req, res){
 			resp.message=msg;
 		}else{
 			resp.status='success';
-			resp.data = msg;
 		}
 
-		res.send({status:'fail', message : msg});
+		res.send(resp);
 	});
 	
 });
@@ -64,10 +87,9 @@ server.del('/api/:zone', function (req, res){
 			resp.message=msg;
 		}else{
 			resp.status='success';
-			resp.data = msg;
 		}
 
-		res.send({status:'fail', message : msg});
+		res.send(resp);
 	});
 });
 
@@ -136,6 +158,88 @@ var bind = {
 		      callback(null, command);
 		    }
 		});
-		
 	}
-}
+};
+
+var dig = {
+	query : function (obj, callback){
+
+		var _root = this;
+		var extra ='';
+		if (obj.type == 'soa'){
+			extra = '+m'
+		}
+
+		var command = 'dig @' + config.server +' ' + obj.hostname + ' '+obj.type+' +noall +nocomments +answer ' + extra;
+		exec(command,
+		  function (error, stdout, stderr) {
+		    if (error) {
+		      callback(error, stderr + stdout);
+		    }else{
+
+		      var x = _root._tools._cleandig(stdout, obj.hostname, obj.type);
+
+		      if(x){
+		      	callback(null, x);
+		      }else{
+		      	callback('notfound', 'Record not found');
+		      }
+		    }
+		});
+	},
+	_tools : {
+		_cleandig : function (data, zone){
+			console.log(data, zone);
+			var _tools = this,x, value, obj = {}, ret = data.split('global options: +cmd')[1];
+			ret = ret.split('\r\n')//[1].split('\t');
+			var output = [];
+			for (key in ret){
+
+				value = ret[key];
+				if(value !== ''){
+					x = _tools._parse(value, zone);
+					if(x){
+						output.push(x);
+					}
+				}
+			};
+			return output;
+		},
+		_isIP : function (ip){
+			var reg = new RegExp('(\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})');
+
+			return reg.test(ip);
+		},
+		_parse : function (string, zone){
+			var _tools = this, value, obj = {}, ret = string.split('\t');
+			var types = ['MX', 'A', 'SOA', 'NS', 'TXT', 'AAA', 'SRV' ,'CNAME','PTR'];
+			zone = (zone.charAt(zone.length-1) == '.') ? zone : zone+'.';
+			if(ret.length <= 1){
+				return false;
+			}
+			for (key in ret){
+				value = ret[key];
+				if (zone == value){
+					obj.hostname = value;
+				}else if (value.charAt(value.length -1) =='.'){
+					obj.record = value
+				}
+				if(value.indexOf(' ') !==-1){
+					var y = value.split(' ');
+					console.log('SPLIT', value.split(' '));
+					obj.record = y[1];
+					obj.priority = +y[0];
+				}else if(_tools._isIP(value)){
+					obj.ip = value;
+				}
+				if (!isNaN(+value)){
+					obj.ttl = +value;
+				}
+				if(types.indexOf(value) !== -1){
+					obj.type=value;
+				}
+			}
+			return obj;
+		}
+	}
+};
