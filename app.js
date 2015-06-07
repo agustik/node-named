@@ -74,6 +74,9 @@ server.get('/api/:zone', function (req, res){
 });
 
 server.post('/api/:zone', function (req, res){
+
+
+	console.log(req.body);
 	var data = JSON.parse(req.body);
 	var token = req.headers['x-token'];
 	var resp = {status:'fail'} ;
