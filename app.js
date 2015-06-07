@@ -260,6 +260,7 @@ var dig = {
 			return reg.test(ip);
 		},
 		_parse : function (string, zone){
+			string = string.replace(/(\r\n|\n|\r)/gm,"");
 			var _tools = this, value, obj = {}, ret = string.split('\t');
 			var types = ['MX', 'A', 'SOA', 'NS', 'TXT', 'AAA', 'SRV' ,'CNAME','PTR'];
 			zone = (zone.charAt(zone.length-1) == '.') ? zone : zone+'.';
