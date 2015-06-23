@@ -8,6 +8,9 @@ var bind = require('./lib/bind.js');
 
 var dig = require('./lib/dig.js');
 
+
+config.dir=__dirname;
+console.log(config.dir);
 dig.config = config;
 bind.config=config;
 
@@ -20,102 +23,105 @@ server.use(restify.queryParser({ mapParams: false }));
 
 function app (req, res, next){
 
-	var data
+        var data
 
-	var token = req.headers['x-token'];
+        var token = req.headers['x-token'];
 
-	if (req.method=='GET'){
-		data = req.query;
-	}else{
-		data = req.body;
-	}
+        if (req.method=='GET'){
+                data = req.query;
+        }else{
+                data = req.body;
+        }
 
-	if(req.headers['content-type'] !== 'application/json'){
-		data = JSON.parse(data);
-	}
-	
-	data.zone = req.params.zone;
-	data.ttl = (data.ttl) ? data.ttl : config.ttl;
-	data.type = (data.type) ? data.type : config.type;
-	data.zone = req.params.zone;
+        if(req.headers['content-type'] !== 'application/json'){
+                data = JSON.parse(data);
+        }
 
-	var resp = {
-		status:'fail'
-	};
+        data.zone = req.params.zone;
+        data.ttl = (data.ttl) ? data.ttl : config.ttl;
+        data.type = (data.type) ? data.type : config.type;
+        data.zone = req.params.zone;
 
-
-	if(!req.params.zone){
-		resp.message='zone needed /api/:zone';
-		res.send(resp);
-		return next();
-	}
+        var resp = {
+                status:'fail'
+        };
 
 
-	if(!Authenticate(token)){
-		if(token == undefined){
-			resp.message="No token";
-		}else{
-			resp.message="Token not valid";
-		}
-		res.send(resp);
-		return;
-	}
-	
-	if(!req.params.zone){
-		res.send(resp);
-		return;
-	}
-	switch(req.method){
-		case 'DELETE':
-			bind.delete(data, function (err, msg){
-				
-				if(err){
-					resp.message=msg;
-				}else{
-					resp.status='success';
-				}
-
-				res.send(resp);
-			});
-		break;
-		case 'PUT':
-
-		break;
-		case 'POST':
-			bind.update(data, function (err, msg){
-				if(err){
-					resp.message=msg;
-				}else{
-					resp.status='success';
-				}
-
-				res.send(resp);
-			});
-		break;
-		case 'GET':
-			if(req.params.zone !== 'dig'){
-				data.hostname=data.zone;
-			} 
-			dig.query(data, function (err, response){
-				console.log('err:',err, response);
-				if(!err){
-					resp.status='success';
-					resp.data=response;
-				}else{
-					resp.message=response;
-				}
-				res.send(resp);
-			});
-			
-		break;
-		default:
-			resp.message="Operation not supported";
-			res.send(resp);
-		break;
-	}
+        if(!req.params.zone){
+                resp.message='zone needed /api/:zone';
+                res.send(resp);
+                return next();
+        }
 
 
-	return next();
+        if(!Authenticate(token)){
+                if(token == undefined){
+                        resp.message="No token";
+                }else{
+                        resp.message="Token not valid";
+                }
+                res.send(resp);
+                return;
+        }
+
+        if(!req.params.zone){
+                res.send(resp);
+                return;
+        }
+        switch(req.method){
+                case 'DELETE':
+                        bind.delete(data, function (err, msg){
+
+                                if(err){
+                                        resp.message=err;
+                                        resp.data=msg;
+                                }else{
+                                        resp.status='success';
+                                }
+
+                                res.send(resp);
+                        });
+                break;
+                case 'PUT':
+
+                break;
+                case 'POST':
+                        console.log('POST');
+                        bind.update(data, function (err, msg){
+                                if(err){
+                                        resp.message=err;
+                                        resp.data=msg;
+                                }else{
+                                        resp.status='success';
+                                }
+
+                                res.send(resp);
+                        });
+                break;
+                case 'GET':
+                        if(req.params.zone !== 'dig'){
+                                data.hostname=data.zone;
+                        }
+                        dig.query(data, function (err, response){
+                                console.log('err:',err, response);
+                                if(!err){
+                                        resp.status='success';
+                                        resp.data=response;
+                                }else{
+                                        resp.message=response;
+                                }
+                                res.send(resp);
+                        });
+
+                break;
+                default:
+                        resp.message="Operation not supported";
+                        res.send(resp);
+                break;
+        }
+
+
+        return next();
 };
 
 server.get('/api/:zone', app);
@@ -125,83 +131,83 @@ server.post('/api/:zone', app);
 
 // server.post('/api/:zone', function (req, res){
 
-// 	console.log('POST');
-// 	var data = JSON.parse(req.body);
-// 	var token = req.headers['x-token'];
-// 	var resp = {status:'fail'} ;
+//      console.log('POST');
+//      var data = JSON.parse(req.body);
+//      var token = req.headers['x-token'];
+//      var resp = {status:'fail'} ;
 
-// 	if(!data.value || !data.hostname){
-// 		resp.message="value or hostname missing";
-// 		res.send(resp);
-// 		return;
-// 	}
+//      if(!data.value || !data.hostname){
+//              resp.message="value or hostname missing";
+//              res.send(resp);
+//              return;
+//      }
 
-// 	if(!Authenticate(token)){
-// 		if(token == undefined){
-// 			resp.message="No token";
-// 		}else{
-// 			resp.message="Token not valid";
-// 		}
-// 		res.send(resp);
-// 		return;
-// 	}
+//      if(!Authenticate(token)){
+//              if(token == undefined){
+//                      resp.message="No token";
+//              }else{
+//                      resp.message="Token not valid";
+//              }
+//              res.send(resp);
+//              return;
+//      }
 
-	
-// 	data.ttl = (data.ttl) ? data.ttl : config.ttl;
-// 	data.type = (data.type) ? data.type : config.type;
-// 	data.zone = req.params.zone;
-// 	bind.update(data, function (err, msg){
-		
-// 		if(err){
-// 			resp.message=msg;
-// 		}else{
-// 			resp.status='success';
-// 		}
 
-// 		res.send(resp);
-// 	});
-	
+//      data.ttl = (data.ttl) ? data.ttl : config.ttl;
+//      data.type = (data.type) ? data.type : config.type;
+//      data.zone = req.params.zone;
+//      bind.update(data, function (err, msg){
+
+//              if(err){
+//                      resp.message=msg;
+//              }else{
+//                      resp.status='success';
+//              }
+
+//              res.send(resp);
+//      });
+
 // });
 // server.del('/api/:zone', function (req, res){
-// 	console.log('DELETE');
+//      console.log('DELETE');
 
-// 	var data = JSON.parse(req.body);
+//      var data = JSON.parse(req.body);
 
-// 	var token = req.headers['x-token'];
-// 	var resp = {status:'fail'} ;
+//      var token = req.headers['x-token'];
+//      var resp = {status:'fail'} ;
 
-// 	if(!Authenticate(token)){
-// 		if(token == undefined){
-// 			resp.message="No token";
-// 		}else{
-// 			resp.message="Token not valid";
-// 		}
-// 		res.send(resp);
-// 		return;
-// 	}
+//      if(!Authenticate(token)){
+//              if(token == undefined){
+//                      resp.message="No token";
+//              }else{
+//                      resp.message="Token not valid";
+//              }
+//              res.send(resp);
+//              return;
+//      }
 
 
-// 	data.ttl = (data.ttl) ? data.ttl : config.ttl;
-// 	data.type = (data.type) ? data.type : config.type;
-// 	data.zone = req.params.zone;
-// 	bind.delete(data, function (err, msg){
-		
-// 		if(err){
-// 			resp.message=msg;
-// 		}else{
-// 			resp.status='success';
-// 		}
+//      data.ttl = (data.ttl) ? data.ttl : config.ttl;
+//      data.type = (data.type) ? data.type : config.type;
+//      data.zone = req.params.zone;
+//      bind.delete(data, function (err, msg){
 
-// 		res.send(resp);
-// 	});
+//              if(err){
+//                      resp.message=msg;
+//              }else{
+//                      resp.status='success';
+//              }
+
+//              res.send(resp);
+//      });
 // });
 
 function Authenticate(token){
-	if(config.tokens.indexOf(token) !== -1 ){
-		return true;
-	}else{
-		return false;
-	}
+        if(config.tokens.indexOf(token) !== -1 ){
+                return true;
+        }else{
+                return false;
+        }
 }
 
 server.listen(8081, function() {
